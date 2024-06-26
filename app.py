@@ -11,6 +11,7 @@ pygame.display.set_caption("Jogos em Destaque")
 BROWN = (139, 69, 19)
 WHITE = (255, 255, 255)
 PINK = (172, 117, 186)
+HIGHLIGHT_COLOR = (255, 0, 0)  # Vermelho para destaque
 
 def load_and_resize(image_path, width, height):
     image = pygame.image.load(image_path)
@@ -19,14 +20,13 @@ def load_and_resize(image_path, width, height):
 # Carregar a imagem de fundo
 background_image = load_and_resize('bg.png', screen_width, screen_height)
 # Carregar a imagem do logo
-logo_image = load_and_resize('logo.png', 300*0.85, 200*0.85)
+logo_image = load_and_resize('logo.png', int(300 * 0.85), int(200 * 0.85))
 
 game_images = [
-    load_and_resize('cs.png', 260, 460),
-    load_and_resize('cs.png', 260, 460),
-    load_and_resize('cs.png', 260, 440),
-    load_and_resize('cs.png', 260, 460),
-    load_and_resize('cs.png', 260, 460)
+    load_and_resize('cs.png', 150, 250),
+    load_and_resize('cs.png', 150, 250),
+    load_and_resize('cs.png', 150, 250),
+    load_and_resize('cs.png', 150, 250)
 ]
 
 games_info = [
@@ -34,34 +34,30 @@ games_info = [
         "name": "Stardew valley",
         "categories": ["Fazenda", "Relaxante", "Casual"],
         "description": "eu amo tanto esse jogo eu amo tanto esse jogo",
-        "executable_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\BOT.vinnik Chess Early USSR Championships\\bot4_release\\Bot.vinnik Chess Early USSR Championships.exe"
+        "executable_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\BOT.vinnik Chess Early USSR Championships\\bot4_release\\Bot.vinnik Chess Early USSR Championships.exe",
+        "image_path": "cs.png"
     },
     {
         "name": "Stardew Valley",
         "categories": ["RPG", "Casual", "Indie"],
         "description": "Stardew Valley é um RPG de simulação onde você herda uma antiga fazenda e começa uma nova vida no campo.",
-        "executable_path": ""
+        "executable_path": "",
+        "image_path": "cs.png"
     },
     {
         "name": "Guilty Gear",
         "categories": ["Luta", "Arcade", "Competitivo"],
         "description": "sexo",
-        "executable_path": ""
+        "executable_path": "",
+        "image_path": "cs.png"
     },
     {
         "name": "F1 2024",
         "categories": ["Corrida", "Simulação", "Esportes"],
         "description": "sexo",
-        "executable_path": "C:\\path\\to\\f1_2024.exe"
+        "executable_path": "C:\\path\\to\\f1_2024.exe",
+        "image_path": "cs.png"
     }
-,
-    {
-        "name": "F1 2024",
-        "categories": ["Corrida", "Simulação", "Esportes"],
-        "description": "sexo",
-        "executable_path": "C:\\path\\to\\f1_2024.exe"
-    }
-
 ]
 
 if pygame.joystick.get_count() > 0:
@@ -77,7 +73,7 @@ def draw_interface(selected_game_index):
     # Desenhar a imagem de fundo
     screen.blit(background_image, (0, 0))
 
-    font = pygame.font.Font(None, 30)
+    font = pygame.font.Font(None, 28)
     title_font = pygame.font.Font(None, 62)
 
     # Calcular a posição inicial x_pos para centralizar as imagens dos jogos
@@ -146,10 +142,67 @@ def execute_game(executable_path):
     else:
         print(f"Executable path not found: {executable_path}")
 
+def show_game_image(image_path):
+    image_surface = pygame.Surface((800, 600))
+    image_surface.fill(BROWN)
+    image = load_and_resize(image_path, 800, 600)
+    image_surface.blit(image, (0, 0))
+    return image_surface
+
+def show_game_info(selected_game, current_selected_button):
+    info_surface = pygame.Surface((800, 600))
+    info_surface.fill(BROWN)
+
+    font = pygame.font.Font(None, 36)
+    button_font = pygame.font.Font(None, 28)
+
+    play_button_rect = pygame.Rect(100, 500, 200, 50)
+    image_button_rect = pygame.Rect(500, 500, 200, 50)
+
+    # Desenhar nome do jogo
+    name_text = font.render(selected_game["name"], True, WHITE)
+    name_rect = name_text.get_rect(center=(400, 50))
+    info_surface.blit(name_text, name_rect)
+
+    # Desenhar categorias
+    categories_text = [font.render(category, True, WHITE) for category in selected_game["categories"]]
+    y_pos_categories = 100
+    for text in categories_text:
+        text_rect = text.get_rect(center=(400, y_pos_categories))
+        info_surface.blit(text, text_rect)
+        y_pos_categories += 40
+
+    # Desenhar botões
+    pygame.draw.rect(info_surface, PINK, play_button_rect)
+    if current_selected_button == 0:
+        pygame.draw.rect(info_surface, HIGHLIGHT_COLOR, play_button_rect, 3)
+    play_text = button_font.render("Jogar", True, WHITE)
+    play_text_rect = play_text.get_rect(center=play_button_rect.center)
+    info_surface.blit(play_text, play_text_rect)
+
+    pygame.draw.rect(info_surface, PINK, image_button_rect)
+    if current_selected_button == 1:
+        pygame.draw.rect(info_surface, HIGHLIGHT_COLOR, image_button_rect, 3)
+    image_text = button_font.render("Mostrar Foto", True, WHITE)
+    image_text_rect = image_text.get_rect(center=image_button_rect.center)
+    info_surface.blit(image_text, image_text_rect)
+
+    return info_surface, play_button_rect, image_button_rect
+
+def handle_popup_navigation(joystick, current_selected_button):
+    axis_value = joystick.get_axis(1)
+    if axis_value < -0.5:
+        current_selected_button = (current_selected_button - 1) % 2
+    elif axis_value > 0.5:
+        current_selected_button = (current_selected_button + 1) % 2
+    return current_selected_button
+
 def main():
     selected_game_index = 1
     clock = pygame.time.Clock()
     last_move_time = 0
+    popup_info = None
+    current_selected_button = 0
 
     while True:
         current_time = pygame.time.get_ticks() / 1000
@@ -162,11 +215,25 @@ def main():
                 selected_game_index, last_move_time = handle_joystick_motion(axis_value, selected_game_index, last_move_time, current_time)
             elif event.type == pygame.JOYBUTTONDOWN:
                 if joystick.get_button(0):
-                    selected_game = games_info[selected_game_index]
-                    print(f"Você escolheu abrir o jogo: {selected_game['name']}")
-                    execute_game(selected_game['executable_path'])
+                    if popup_info:
+                        if current_selected_button == 0:
+                            execute_game(games_info[selected_game_index]["executable_path"])
+                        elif current_selected_button == 1:
+                            popup_info = (show_game_image(games_info[selected_game_index]["image_path"]), popup_info[1], popup_info[2])
+                    else:
+                        selected_game = games_info[selected_game_index]
+                        print(f"Você escolheu abrir o jogo: {selected_game['name']}")
+                        popup_info = show_game_info(selected_game, current_selected_button), current_selected_button
+            elif event.type == pygame.JOYAXISMOTION and popup_info:
+                current_selected_button = handle_popup_navigation(joystick, current_selected_button)
+                popup_info = show_game_info(games_info[selected_game_index], current_selected_button), current_selected_button
 
         draw_interface(selected_game_index)
+
+        if popup_info:
+            screen.blit(popup_info[0][0], (560, 240))
+            pygame.display.flip()
+
         clock.tick(60)
 
 if __name__ == "__main__":
