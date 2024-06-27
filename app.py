@@ -1,240 +1,137 @@
 import pygame
-import sys
 import os
-
-pygame.init()
-
-screen_width, screen_height = 1920, 1080
-screen = pygame.display.set_mode((screen_width, screen_height), pygame.FULLSCREEN)
-pygame.display.set_caption("Jogos em Destaque")
-
-BROWN = (139, 69, 19)
-WHITE = (255, 255, 255)
-PINK = (172, 117, 186)
-HIGHLIGHT_COLOR = (255, 0, 0)  # Vermelho para destaque
-
-def load_and_resize(image_path, width, height):
-    image = pygame.image.load(image_path)
-    return pygame.transform.scale(image, (width, height))
-
-# Carregar a imagem de fundo
-background_image = load_and_resize('bg.png', screen_width, screen_height)
-# Carregar a imagem do logo
-logo_image = load_and_resize('logo.png', int(300 * 0.85), int(200 * 0.85))
-
-game_images = [
-    load_and_resize('cs.png', 150, 250),
-    load_and_resize('cs.png', 150, 250),
-    load_and_resize('cs.png', 150, 250),
-    load_and_resize('cs.png', 150, 250)
-]
-
-games_info = [
-    {
-        "name": "Stardew valley",
-        "categories": ["Fazenda", "Relaxante", "Casual"],
-        "description": "eu amo tanto esse jogo eu amo tanto esse jogo",
-        "executable_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\BOT.vinnik Chess Early USSR Championships\\bot4_release\\Bot.vinnik Chess Early USSR Championships.exe",
-        "image_path": "cs.png"
-    },
-    {
-        "name": "Stardew Valley",
-        "categories": ["RPG", "Casual", "Indie"],
-        "description": "Stardew Valley é um RPG de simulação onde você herda uma antiga fazenda e começa uma nova vida no campo.",
-        "executable_path": "",
-        "image_path": "cs.png"
-    },
-    {
-        "name": "Guilty Gear",
-        "categories": ["Luta", "Arcade", "Competitivo"],
-        "description": "sexo",
-        "executable_path": "",
-        "image_path": "cs.png"
-    },
-    {
-        "name": "F1 2024",
-        "categories": ["Corrida", "Simulação", "Esportes"],
-        "description": "sexo",
-        "executable_path": "C:\\path\\to\\f1_2024.exe",
-        "image_path": "cs.png"
-    }
-]
-
-if pygame.joystick.get_count() > 0:
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-else:
-    print("Nenhum joystick conectado!")
-    sys.exit()
-
-def draw_interface(selected_game_index):
-    screen.fill(BROWN)
-
-    # Desenhar a imagem de fundo
-    screen.blit(background_image, (0, 0))
-
-    font = pygame.font.Font(None, 28)
-    title_font = pygame.font.Font(None, 62)
-
-    # Calcular a posição inicial x_pos para centralizar as imagens dos jogos
-    total_width = sum(image.get_width() for image in game_images) + (len(game_images) - 1) * 50
-    x_pos = (screen_width - total_width) // 2
-
-    # Calcular a posição y_pos para centralizar as imagens dos jogos verticalmente
-    total_height = max(image.get_height() for image in game_images)
-    y_pos_images = (screen_height - total_height) // 2
-
-    for index, image in enumerate(game_images):
-        if index == selected_game_index:
-            pygame.draw.rect(screen, WHITE, (x_pos - 10, y_pos_images - 10, image.get_width() + 20, image.get_height() + 20), 3)
-        screen.blit(image, (x_pos, y_pos_images))
-        x_pos += image.get_width() + 50
-
-    selected_game = games_info[selected_game_index]
-
-    # Desenhar o nome do jogo acima das categorias
-    game_name_text = title_font.render(selected_game["name"], True, WHITE)
-    game_name_rect = game_name_text.get_rect(center=(screen_width // 2, y_pos_images + total_height + 50))
-    screen.blit(game_name_text, game_name_rect)
-
-    # Centralizar as categorias horizontalmente abaixo do nome do jogo
-    categories_text = [font.render(category, True, WHITE) for category in selected_game["categories"]]
-    total_categories_width = sum(text.get_width() for text in categories_text) + (len(categories_text) - 1) * 20
-    x_pos_categories = (screen_width - total_categories_width) // 2
-    y_pos_categories = game_name_rect.bottom + 20
-
-    for text in categories_text:
-        text_rect = text.get_rect()
-        pygame.draw.rect(screen, PINK, (x_pos_categories - 10, y_pos_categories - 10, text_rect.width + 20, text_rect.height + 20))
-        screen.blit(text, (x_pos_categories, y_pos_categories))
-        x_pos_categories += text_rect.width + 40
-
-    # Centralizar a descrição verticalmente abaixo das categorias
-    description = f"Sobre: {selected_game['description']}"
-    description_lines = description.split('\n')
-    total_description_height = len(description_lines) * 40
-    y_pos_description = y_pos_categories + 60
-
-    for line in description_lines:
-        text = font.render(line, True, WHITE)
-        text_rect = text.get_rect(center=(screen_width // 2, y_pos_description))
-        screen.blit(text, text_rect)
-        y_pos_description += 40
-
-    # Centralizar a imagem do logo no topo da tela
-    logo_rect = logo_image.get_rect(center=(screen_width // 2, logo_image.get_height() // 1.7))
-    screen.blit(logo_image, logo_rect)
-
-    pygame.display.flip()
-
-def handle_joystick_motion(axis_value, selected_game_index, last_move_time, current_time, threshold=0.5, delay=0.2):
-    if axis_value < -threshold and current_time - last_move_time > delay:
-        selected_game_index = (selected_game_index - 1) % len(game_images)
-        last_move_time = current_time
-    elif axis_value > threshold and current_time - last_move_time > delay:
-        selected_game_index = (selected_game_index + 1) % len(game_images)
-        last_move_time = current_time
-    return selected_game_index, last_move_time
-
-def execute_game(executable_path):
-    if os.path.exists(executable_path):
-        os.startfile(executable_path)
-    else:
-        print(f"Executable path not found: {executable_path}")
-
-def show_game_image(image_path):
-    image_surface = pygame.Surface((800, 600))
-    image_surface.fill(BROWN)
-    image = load_and_resize(image_path, 800, 600)
-    image_surface.blit(image, (0, 0))
-    return image_surface
-
-def show_game_info(selected_game, current_selected_button):
-    info_surface = pygame.Surface((800, 600))
-    info_surface.fill(BROWN)
-
-    font = pygame.font.Font(None, 36)
-    button_font = pygame.font.Font(None, 28)
-
-    play_button_rect = pygame.Rect(100, 500, 200, 50)
-    image_button_rect = pygame.Rect(500, 500, 200, 50)
-
-    # Desenhar nome do jogo
-    name_text = font.render(selected_game["name"], True, WHITE)
-    name_rect = name_text.get_rect(center=(400, 50))
-    info_surface.blit(name_text, name_rect)
-
-    # Desenhar categorias
-    categories_text = [font.render(category, True, WHITE) for category in selected_game["categories"]]
-    y_pos_categories = 100
-    for text in categories_text:
-        text_rect = text.get_rect(center=(400, y_pos_categories))
-        info_surface.blit(text, text_rect)
-        y_pos_categories += 40
-
-    # Desenhar botões
-    pygame.draw.rect(info_surface, PINK, play_button_rect)
-    if current_selected_button == 0:
-        pygame.draw.rect(info_surface, HIGHLIGHT_COLOR, play_button_rect, 3)
-    play_text = button_font.render("Jogar", True, WHITE)
-    play_text_rect = play_text.get_rect(center=play_button_rect.center)
-    info_surface.blit(play_text, play_text_rect)
-
-    pygame.draw.rect(info_surface, PINK, image_button_rect)
-    if current_selected_button == 1:
-        pygame.draw.rect(info_surface, HIGHLIGHT_COLOR, image_button_rect, 3)
-    image_text = button_font.render("Mostrar Foto", True, WHITE)
-    image_text_rect = image_text.get_rect(center=image_button_rect.center)
-    info_surface.blit(image_text, image_text_rect)
-
-    return info_surface, play_button_rect, image_button_rect
-
-def handle_popup_navigation(joystick, current_selected_button):
-    axis_value = joystick.get_axis(1)
-    if axis_value < -0.5:
-        current_selected_button = (current_selected_button - 1) % 2
-    elif axis_value > 0.5:
-        current_selected_button = (current_selected_button + 1) % 2
-    return current_selected_button
+import subprocess
+import time
 
 def main():
-    selected_game_index = 1
-    clock = pygame.time.Clock()
-    last_move_time = 0
-    popup_info = None
-    current_selected_button = 0
+    # Inicializa o Pygame e o joystick
+    pygame.init()
+    pygame.joystick.init()
 
-    while True:
-        current_time = pygame.time.get_ticks() / 1000
+    screen_width, screen_height = 1920, 1080
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption("Stardew Valley Interface")
+
+    try:
+        background_img = pygame.image.load("bg.png")
+        stardew_img = pygame.image.load("stardew.png")
+        qr_img = pygame.image.load("qr.png")
+    except pygame.error as e:
+        print(f"Erro ao carregar imagens: {e}")
+        pygame.quit()
+        exit()
+
+    # Redimensiona a imagem do Stardew
+    #stardew_img = pygame.transform.scale(stardew_img, (600, 400))
+    qr_img = pygame.transform.scale(qr_img, (200, 200))
+
+
+    # Define as cores
+    WHITE = (255, 255, 255)
+    BLACK = (255, 255, 255)
+    GRAY = (100, 100, 100)
+    GREEN = (172, 117, 186)
+
+
+    # Define as fontes
+    font_title = pygame.font.Font(None, 74)
+    font_desc = pygame.font.Font(None, 36)
+    font_button = pygame.font.Font(None, 50)
+
+    # Inicializa o joystick
+    joystick = None
+    if pygame.joystick.get_count() > 0:
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+
+    # Função para desenhar texto na tela
+    def draw_text(text, font, color, surface, x, y):
+        textobj = font.render(text, True, color)
+        textrect = textobj.get_rect()
+        textrect.topleft = (x, y)
+        surface.blit(textobj, textrect)
+
+    # Função para desenhar botões com bordas arredondadas
+    def draw_rounded_rect(surface, color, rect, corner_radius):
+        pygame.draw.rect(surface, color, rect, border_radius=corner_radius)
+
+    # Função para executar o jogo
+    def execute_game():
+        game_path = "C:\Program Files (x86)\Steam\steamapps\common\Stardew Valley\Stardew Valley\Stardew Valley.exe"
+        subprocess.run([game_path])
+
+    # Função para exibir QR
+    def display_qr():
+        screen.fill(BLACK)
+        qr_x = (screen_width - qr_img.get_width()) // 2
+        qr_y = (screen_height - qr_img.get_height()) // 2
+        screen.blit(qr_img, (qr_x, qr_y))
+        pygame.display.flip()
+        qr_displayed = True
+        return qr_displayed
+
+    # Estado da navegação
+    selected_button = 0
+    buttons = ["Jogar", "Exibir QR"]
+
+    last_move_time = time.time()
+    qr_displayed = False
+
+    running = True
+    while running:
+        if not qr_displayed:
+            # Desenha o fundo
+            screen.blit(background_img, (0, 0))
+
+            # Desenha a imagem do Stardew
+            stardew_x = 50
+            stardew_y = 150
+            screen.blit(stardew_img, (stardew_x, stardew_y))
+
+            # Desenha os textos
+            draw_text("Stardew", font_title, WHITE, screen, stardew_x, stardew_y + 420)
+            draw_text("Um jogo de fazenda", font_desc, WHITE, screen, stardew_x, stardew_y + 480)
+
+            # Desenha os botões
+            button_y = 600
+            button_x_start = 1200
+            button_x_offset = 300
+            button_width = 250
+            button_height = 80
+            corner_radius = 20
+            for i, button in enumerate(buttons):
+                color = GRAY if i == selected_button else BLACK
+                button_rect = pygame.Rect(button_x_start + i * button_x_offset, button_y, button_width, button_height)
+                draw_rounded_rect(screen, GREEN, button_rect, corner_radius)
+                text_surface = font_button.render(button, True, color)
+                text_rect = text_surface.get_rect(center=button_rect.center)
+                screen.blit(text_surface, text_rect)
+
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.JOYAXISMOTION:
-                axis_value = joystick.get_axis(0)
-                selected_game_index, last_move_time = handle_joystick_motion(axis_value, selected_game_index, last_move_time, current_time)
+                running = False
             elif event.type == pygame.JOYBUTTONDOWN:
-                if joystick.get_button(0):
-                    if popup_info:
-                        if current_selected_button == 0:
-                            execute_game(games_info[selected_game_index]["executable_path"])
-                        elif current_selected_button == 1:
-                            popup_info = (show_game_image(games_info[selected_game_index]["image_path"]), popup_info[1], popup_info[2])
-                    else:
-                        selected_game = games_info[selected_game_index]
-                        print(f"Você escolheu abrir o jogo: {selected_game['name']}")
-                        popup_info = show_game_info(selected_game, current_selected_button), current_selected_button
-            elif event.type == pygame.JOYAXISMOTION and popup_info:
-                current_selected_button = handle_popup_navigation(joystick, current_selected_button)
-                popup_info = show_game_info(games_info[selected_game_index], current_selected_button), current_selected_button
+                if event.button == 0:  # Assumindo que o botão 0 é o botão de "A" do joystick
+                    if selected_button == 0:
+                        execute_game()
+                    elif selected_button == 1:
+                        qr_displayed = display_qr()
+                elif event.button == 1:  # Assumindo que o botão 1 é o botão de "B" do joystick
+                    if qr_displayed:
+                        qr_displayed = False
+            elif event.type == pygame.JOYAXISMOTION:
+                if time.time() - last_move_time > 0.3:  # Adiciona um intervalo de 300 ms
+                    if event.axis == 0:  # Eixo horizontal
+                        if event.value > 0.5:
+                            selected_button = (selected_button + 1) % len(buttons)
+                            last_move_time = time.time()
+                        elif event.value < -0.5:
+                            selected_button = (selected_button - 1) % len(buttons)
+                            last_move_time = time.time()
 
-        draw_interface(selected_game_index)
-
-        if popup_info:
-            screen.blit(popup_info[0][0], (560, 240))
-            pygame.display.flip()
-
-        clock.tick(60)
+    pygame.quit()
 
 if __name__ == "__main__":
     main()
